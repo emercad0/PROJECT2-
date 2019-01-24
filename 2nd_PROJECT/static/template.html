@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<meta charset="utf-8">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="X-UA-Compatible" content="ie=edge">
+  <title>TreeMap Layout</title>
+  <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.4.0/css/bootstrap.min.css">
+  <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
+  <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.4.0/js/bootstrap.min.js"></script>
+</head>
+
+<style>
+  body {
+    font-family: "Helvetica Neue", Helvetica, sans-serif;
+    font-size: 9px;
+  }
+
+  rect {
+    fill: black;
+    opacity: 0.15;
+  }
+
+  text {
+    fill: white;
+  }
+</style>
+
+
+
+<body>
+<div class="card">
+  <div class="jumbotron">
+    <h1><img src="https://upload.wikimedia.org/wikipedia/commons/e/e2/BillboardLogo2013.svg"></h1>
+    <!--  <img src= "https://upload.wikimedia.org/wikipedia/commons/e/e2/BillboardLogo2013.svg">
+        <img src="https://assets.billboard.com/assets/1547672391/images/Billboard-white.svg?b71cf19eb8299ff71ec9"> -->
+
+    <p>Dashboard project for Billboard Top 100 Chart For The Year of 2018</p>
+  </div>
+  <div class="card-body"> <br> </div>
+
+</div>
+
+  <svg width="920" height="620">
+    <g class="wrapper" transform="translate(20, 20)">
+    </g>
+  </svg>
+
+  <script src="//d3js.org/d3.v4.min.js"></script>
+
+  <script>
+    var tool = d3.select("body").append("div");
+    var treemapLayout = d3.treemap()
+      .size([900, 600])
+      .padding(12);
+
+    function make(root) {
+      var nodes = root.descendants();
+
+      var u = d3.select('.wrapper')
+        .selectAll('g.node')
+        .data(nodes)
+
+      var nodes = u.enter()
+        .append('g')
+        .classed('node', true);
+
+      nodes.append('rect')
+        .attr('x', function (d) {
+          return d.x0;
+        })
+        .attr('y', function (d) {
+          return d.y0;
+        })
+        .attr('width', function (d) {
+          return d.x1 - d.x0;
+        })
+        .attr('height', function (d) {
+          return d.y1 - d.y0;
+        });
+
+      nodes.append('text')
+        .attr('x', function (d) {
+          return d.depth === 3 ? 0.5 * (d.x0 + d.x1) : d.x0 + 5;
+        })
+        .attr('y', function (d) {
+          return d.depth === 3 ? 0.5 * (d.y0 + d.y1) : d.y0 + 6;
+        })
+        .each(function (d) {
+          var label = d.depth === 0 ? '' : d.depth === 3 ? d.data.songs : d.data.key;
+          console.log(label)
+          d3.select(this)
+            .text(label)
+            .style('font-size', d3.min([1.9 * (d.x1 - d.x0) / label.length, 12]))
+            .style('display', (d.x1 - d.x0) < 10 || (d.y0 - d.y1) < 10);
+        })
+        .style('text-anchor', function (d) {
+          return d.depth === 3 ? 'middle' : 'start';
+        })
+        .attr('dy', '0.3em')
+
+    }
+
+    function ready(err, data) {
+      var nest = d3.nest()
+        .key(function (d) {
+          return d.pPosition;
+        })
+        .key(function (d) {
+          return d['artist'];
+        })
+        .entries(data);
+
+      nest = {
+        key: 'root',
+        values: nest
+      };
+
+      var root = d3.hierarchy(nest, function (d) {
+        return d.values;
+      }).sum(function (d) {
+        return d['currentWeekPosition'] === undefined ? null : d['index'];
+      });
+
+
+
+      treemapLayout(root);
+      make(root);
+    }
+
+    d3.csv('current1.csv', ready);
+  </script>
+</body>
+
+</html>
